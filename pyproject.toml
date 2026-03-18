@@ -1,0 +1,24 @@
+[project]
+name = "p7-g2-multiclase"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "evidently>=0.4.36",
+    "kagglehub>=1.0.0",
+    "matplotlib>=3.10.8",
+    "opencv-python>=4.13.0.92",
+    "optuna>=4.8.0",
+    "pandas>=3.0.1",
+    "pillow>=12.1.1",
+    "plotly>=6.6.0",
+    "pytest>=9.0.2",
+    "python-dotenv>=1.2.2",
+    "scikit-image>=0.26.0",
+    "scikit-learn>=1.8.0",
+    "seaborn>=0.13.2",
+    "streamlit>=1.19.0",
+    "torch>=2.10.0",
+    "torchvision>=0.25.0",
+]
