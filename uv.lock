@@ -1472,6 +1472,7 @@ dependencies = [
     { name = "evidently" },
     { name = "kagglehub" },
     { name = "matplotlib" },
+    { name = "numpy" },
     { name = "opencv-python" },
     { name = "optuna" },
     { name = "pandas" },
@@ -1485,6 +1486,7 @@ dependencies = [
     { name = "streamlit" },
     { name = "torch" },
     { name = "torchvision" },
+    { name = "tqdm" },
 ]
 
 [package.metadata]
@@ -1492,6 +1494,7 @@ requires-dist = [
     { name = "evidently", specifier = ">=0.4.36" },
     { name = "kagglehub", specifier = ">=1.0.0" },
     { name = "matplotlib", specifier = ">=3.10.8" },
+    { name = "numpy", specifier = ">=2.4.3" },
     { name = "opencv-python", specifier = ">=4.13.0.92" },
     { name = "optuna", specifier = ">=4.8.0" },
     { name = "pandas", specifier = ">=3.0.1" },
@@ -1505,6 +1508,7 @@ requires-dist = [
     { name = "streamlit", specifier = ">=1.19.0" },
     { name = "torch", specifier = ">=2.10.0" },
     { name = "torchvision", specifier = ">=0.25.0" },
+    { name = "tqdm", specifier = ">=4.67.3" },
 ]
 
 [[package]]
