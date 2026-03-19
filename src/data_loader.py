@@ -114,7 +114,7 @@ def get_transforms(augment: bool = False) -> transforms.Compose:
             contrast=0.2,
             saturation=0.1
         ),
-        transforms.RandomZoomOut(fill=0, side_range=(1.0, 1.2), p=0.3),
+        transforms.RandomAffine(degrees=0, scale=(0.8, 1.0)),
         transforms.ToTensor(),
         transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD)
     ]
