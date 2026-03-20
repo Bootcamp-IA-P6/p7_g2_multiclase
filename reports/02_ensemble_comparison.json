@@ -3,5 +3,6 @@
     "XGBoost": 0.9929161486896326,
     "SVM": 0.9924851045106772,
     "Ensemble_Soft": 0.9949284688351713,
-    "Ensemble_Weighted": 0.9945603301308507
+    "Ensemble_Weighted": 0.9945603301308507,
+    "Ensemble_Stacking": 0.9952349755123876
 }
