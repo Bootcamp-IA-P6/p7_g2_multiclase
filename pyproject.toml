@@ -3,7 +3,7 @@ name = "p7-g2-multiclase"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11, <3.13"
 dependencies = [
     "evidently>=0.4.36",
     "kagglehub>=1.0.0",
@@ -24,8 +24,5 @@ dependencies = [
     "torch>=2.10.0",
     "torchvision>=0.25.0",
     "tqdm>=4.67.3",
-<<<<<<< HEAD
-=======
     "xgboost>=3.2.0",
->>>>>>> 111b314abad6fe6ecb510de450945c13cfc07d4e
 ]
