@@ -1,4 +1,3 @@
-# tests/conftest.py
 """
 Fixtures compartidos entre todos los tests.
 Se ejecutan una sola vez y se reutilizan.
