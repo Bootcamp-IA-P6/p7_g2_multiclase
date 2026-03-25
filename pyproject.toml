@@ -27,3 +27,8 @@ dependencies = [
     "tqdm>=4.67.3",
     "xgboost>=3.2.0",
 ]
+
+[dependency-groups]
+dev = [
+    "pytest-cov>=7.1.0",
+]
