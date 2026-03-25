@@ -190,8 +190,6 @@ Para reentrenar el modelo:
 | Base de datos | Supabase (PostgreSQL) |
 | Contenedor | Docker + Docker Compose |
 | Tests | pytest >= 9.0 |
-| Monitorización | Evidently >= 0.4.36 |
-| HPO | Optuna >= 4.8 |
 
 ---
 
