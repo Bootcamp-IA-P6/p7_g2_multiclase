@@ -1,4 +1,4 @@
-# app/app.py
+# app/main.py
 """
 Aplicación Streamlit para detección de incendios forestales.
 3 páginas: Analizar imagen | Historial | Dashboard
@@ -9,6 +9,7 @@ from PIL import Image
 import pandas as pd
 import sys
 from pathlib import Path
+from data_manager import save_to_pending, move_to_labeled
 
 sys.path.append(str(Path(__file__).parent.parent))
 
@@ -91,17 +92,21 @@ if page == "🔍 Analizar imagen":
     if uploaded is not None:
         img = Image.open(uploaded).convert("RGB")
 
-        # Realizar predicción
+        # 1. Predict first
         with st.spinner("Analizando imagen..."):
             result = predict(img, extractor, classifier)
 
-        # Guardar en base de datos
+        # 2. Save to DB first to get the ID (Original function, no schema change!)
         pred_id = save_prediction(
             filename   = uploaded.name,
             prediction = result["class"],
             confidence = result["confidence"],
             probs      = result["probs"]
         )
+
+        # 3. Save file physically using the ID we just got
+        with st.spinner("Syncing to MLOps pipeline..."):
+            save_to_pending(uploaded, pred_id) # Using ID as filename
 
         # ── Layout ────────────────────────────────────────────
         col_img, col_result = st.columns([1, 1], gap="large")
@@ -357,6 +362,16 @@ elif page == "💬 Feedback":
                 "❌ Incorrecta":      "incorrect",
                 "🤔 No estoy seguro": "unsure"
             }
+
+            # --- MLOps Pipeline: Logic to move file ---
+            # Determine the label for retraining
+            final_label = true_label if fb_map[feedback_type] == "incorrect" else selected_pred['prediction']
+            
+            # MLOps: Move file by ID
+            if fb_map[feedback_type] in ["correct", "incorrect"]:
+                # 'selected_id' is already available in your original code
+                move_to_labeled(selected_id, final_label)
+
             save_feedback(
                 prediction_id = selected_id,
                 feedback_type = fb_map[feedback_type],
