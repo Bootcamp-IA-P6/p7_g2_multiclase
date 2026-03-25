@@ -22,8 +22,11 @@ from app.database import (
     init_db,
     save_prediction,
     save_feedback,
+    get_feedback_history,
+    get_feedback_stats,
     get_history,
-    get_stats
+    get_stats,
+    get_client
 )
 
 # ── Configuración de la página ────────────────────────────────
@@ -58,8 +61,10 @@ st.sidebar.divider()
 page = st.sidebar.radio(
     "Navegación",
     ["🔍 Analizar imagen",
-     "📋 Historial",
-     "📊 Dashboard"]
+    "📋 Historial",
+    "💬 Feedback",
+    "📊 Dashboard",
+    ]
 )
 
 st.sidebar.divider()
@@ -134,22 +139,22 @@ if page == "🔍 Analizar imagen":
             }
             st.bar_chart(probs_display)
 
-            # ── Feedback ──────────────────────────────────────
-            st.divider()
-            st.markdown("**¿Es correcta esta predicción?**")
+            # # ── Feedback ──────────────────────────────────────
+            # st.divider()
+            # st.markdown("**¿Es correcta esta predicción?**")
 
-            fb_col1, fb_col2, fb_col3 = st.columns(3)
+            # fb_col1, fb_col2, fb_col3 = st.columns(3)
 
-            if fb_col1.button("✅ Correcta", key="correct"):
-                save_feedback(pred_id, "correct")
-                st.success("¡Gracias por tu feedback!")
+            # if fb_col1.button("✅ Correcta", key="correct"):
+            #     save_feedback(pred_id, "correct")
+            #     st.success("¡Gracias por tu feedback!")
 
-            if fb_col2.button("❌ Incorrecta", key="incorrect"):
-                st.session_state[f"show_fix_{pred_id}"] = True
+            # if fb_col2.button("❌ Incorrecta", key="incorrect"):
+            #     st.session_state[f"show_fix_{pred_id}"] = True
 
-            if fb_col3.button("🤔 No seguro", key="unsure"):
-                save_feedback(pred_id, "unsure")
-                st.info("Registrado para revisión")
+            # if fb_col3.button("🤔 No seguro", key="unsure"):
+            #     save_feedback(pred_id, "unsure")
+            #     st.info("Registrado para revisión")
 
             # Selector clase correcta
             if st.session_state.get(f"show_fix_{pred_id}"):
@@ -198,19 +203,226 @@ elif page == "📋 Historial":
 
         st.dataframe(
             df[["timestamp", "filename", "prediction",
-                "confidence", "feedback"]].rename(columns={
+                "confidence"]].rename(columns={
                 "timestamp":  "Fecha",
                 "filename":   "Archivo",
                 "prediction": "Predicción",
                 "confidence": "Confianza",
-                "feedback":   "Feedback"
             }),
             use_container_width=True,
             hide_index=True
         )
 
 # ══════════════════════════════════════════════════════════════
-# PÁGINA 3 — Dashboard
+# PÁGINA 3 — Feedback
+# ══════════════════════════════════════════════════════════════
+elif page == "💬 Feedback":
+    st.title("💬 Feedback de predicciones")
+    st.caption(
+        "Selecciona una predicción del historial y "
+        "proporciona feedback para mejorar el modelo."
+    )
+    st.divider()
+
+    # Cargar predicciones desde Supabase
+    client   = get_client()
+    response = client.table("predictions") \
+                    .select("id, timestamp, filename, prediction, confidence") \
+                    .order("timestamp", desc=True) \
+                    .limit(50) \
+                    .execute()
+    predictions = response.data
+
+    if not predictions:
+        st.info("⏳ No hay predicciones aún. Ve a 'Analizar imagen' para empezar.")
+    else:
+        st.markdown("### Selecciona una predicción")
+
+        # Mostrar tabla de predicciones para elegir
+        df_preds = pd.DataFrame(predictions)
+        df_preds["timestamp"] = pd.to_datetime(
+            df_preds["timestamp"]
+        ).dt.strftime("%d/%m/%Y %H:%M")
+        df_preds["confidence"] = (
+            df_preds["confidence"] * 100
+        ).round(1).astype(str) + "%"
+
+        icons = {"fire": "🔥", "smoke": "💨", "non fire": "🌲"}
+        df_preds["prediction"] = df_preds["prediction"].map(
+            lambda x: f"{icons.get(x, '')} {x}"
+        )
+        df_preds["selector"] = df_preds.apply(
+            lambda r: f"#{r['id']} — {r['filename']} → {r['prediction']} ({r['confidence']})",
+            axis=1
+        )
+
+        # Mostrar tabla visual primero
+        st.dataframe(
+            df_preds[["id", "timestamp", "filename",
+                    "prediction", "confidence"]].rename(columns={
+                "id":         "ID",
+                "timestamp":  "Fecha",
+                "filename":   "Archivo",
+                "prediction": "Predicción",
+                "confidence": "Confianza"
+            }),
+            use_container_width=True,
+            hide_index=True
+        )
+
+        st.divider()
+
+        # Selector por ID o nombre
+        col_sel1, col_sel2 = st.columns([2, 1])
+
+        with col_sel1:
+            selected_label = st.selectbox(
+                "Elige la predicción a evaluar",
+                options=df_preds["selector"].tolist(),
+                help="Selecciona por número de predicción o nombre de archivo"
+            )
+
+        # Obtener ID seleccionado
+        selected_id = int(selected_label.split("—")[0].replace("#", "").strip())
+
+        # Buscar predicción seleccionada
+        selected_pred = next(
+            r for r in predictions if r["id"] == selected_id
+        )
+
+        # Verificar si ya tiene feedback
+        fb_response = client.table("feedback") \
+                            .select("*") \
+                            .eq("prediction_id", selected_id) \
+                            .execute()
+        existing_fb = fb_response.data
+
+        # Mostrar detalles de la predicción seleccionada
+        st.markdown(f"### Detalles de la predicción #{selected_id}")
+
+        col1, col2, col3 = st.columns(3)
+        col1.metric(
+            "Predicción",
+            f"{icons.get(selected_pred['prediction'].split(' ')[-1], '')} "
+            f"{selected_pred['prediction']}"
+        )
+        col2.metric(
+            "Confianza",
+            f"{float(selected_pred['confidence'])*100:.1f}%"
+        )
+        col3.metric(
+            "Archivo",
+            selected_pred["filename"]
+        )
+
+        # Mostrar feedback existente si ya lo tiene
+        if existing_fb:
+            st.warning(
+                f"⚠️ Esta predicción ya tiene feedback: "
+                f"**{existing_fb[0]['feedback_type']}** "
+                f"— puedes añadir uno nuevo igualmente"
+            )
+
+        st.divider()
+
+        # ── Formulario de feedback ────────────────────────────
+        st.markdown("### Tu feedback")
+
+        feedback_type = st.radio(
+            "¿Es correcta la predicción?",
+            ["✅ Correcta", "❌ Incorrecta", "🤔 No estoy seguro"],
+            horizontal=True
+        )
+
+        true_label = None
+        if feedback_type == "❌ Incorrecta":
+            true_label = st.selectbox(
+                "¿Cuál es la clase correcta?",
+                ["fire", "smoke", "non fire"]
+            )
+            st.info(
+                f"La predicción fue **{selected_pred['prediction']}** "
+                f"pero la clase correcta es **{true_label}**"
+            )
+
+        comment = st.text_area(
+            "Comentario adicional (opcional)",
+            placeholder="Describe por qué la predicción es correcta o incorrecta...",
+            max_chars=500
+        )
+
+        if st.button("📤 Enviar feedback", type="primary"):
+            fb_map = {
+                "✅ Correcta":        "correct",
+                "❌ Incorrecta":      "incorrect",
+                "🤔 No estoy seguro": "unsure"
+            }
+            save_feedback(
+                prediction_id = selected_id,
+                feedback_type = fb_map[feedback_type],
+                true_label    = true_label,
+                comment       = comment if comment else None
+            )
+            st.success(
+                f"✅ Feedback enviado para predicción #{selected_id} — "
+                f"¡gracias por ayudar a mejorar el modelo!"
+            )
+            st.balloons()
+
+        st.divider()
+
+        # ── Historial de feedback ─────────────────────────────
+        st.markdown("### Historial de feedback registrado")
+        fb_history = get_feedback_history(limit=20)
+
+        if not fb_history:
+            st.info("Aún no hay feedback registrado.")
+        else:
+            fb_stats = get_feedback_stats()
+
+            m1, m2, m3, m4 = st.columns(4)
+            m1.metric("Total",          fb_stats["total"])
+            m2.metric("✅ Correctas",   fb_stats["correct"])
+            m3.metric("❌ Incorrectas", fb_stats["incorrect"])
+            m4.metric("🤔 No seguros",  fb_stats["unsure"])
+
+            st.divider()
+
+            df_fb = pd.DataFrame(fb_history)
+            if not df_fb.empty:
+                # Extraer info de la predicción relacionada
+                df_fb["archivo"]    = df_fb["predictions"].apply(
+                    lambda x: x.get("filename", "")    if x else ""
+                )
+                df_fb["prediccion"] = df_fb["predictions"].apply(
+                    lambda x: x.get("prediction", "")  if x else ""
+                )
+
+                df_fb["timestamp"] = pd.to_datetime(
+                    df_fb["timestamp"]
+                ).dt.strftime("%d/%m/%Y %H:%M")
+
+                st.dataframe(
+                    df_fb[[
+                        "timestamp", "prediction_id", "archivo",
+                        "prediccion", "feedback_type",
+                        "true_label", "comment"
+                    ]].rename(columns={
+                        "timestamp":     "Fecha",
+                        "prediction_id": "ID predicción",
+                        "archivo":       "Archivo",
+                        "prediccion":    "Predicción original",
+                        "feedback_type": "Tipo",
+                        "true_label":    "Clase correcta",
+                        "comment":       "Comentario"
+                    }),
+                    use_container_width=True,
+                    hide_index=True
+                )
+
+
+# ══════════════════════════════════════════════════════════════
+# PÁGINA 4 — Dashboard
 # ══════════════════════════════════════════════════════════════
 elif page == "📊 Dashboard":
     st.title("📊 Dashboard del sistema")
