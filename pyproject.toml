@@ -3,7 +3,7 @@ name = "p7-g2-multiclase"
 version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
-requires-python = ">=3.13"
+requires-python = ">=3.11, <3.13"
 dependencies = [
     "evidently>=0.4.36",
     "kagglehub>=1.0.0",
@@ -20,6 +20,7 @@ dependencies = [
     "scikit-learn>=1.8.0",
     "seaborn>=0.13.2",
     "streamlit>=1.55.0",
+    "supabase>=2.28.3",
     "tensorflow==2.21.0",
     "torch>=2.10.0",
     "torchvision>=0.25.0",
