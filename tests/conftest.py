@@ -36,7 +36,7 @@ def feature_extractor():
     """
     from tensorflow.keras.applications import EfficientNetB0
     return EfficientNetB0(
-        weights="imagenet",
+        weights=None,
         include_top=False,
         pooling="avg"
     )

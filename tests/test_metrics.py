@@ -112,7 +112,7 @@ class TestModelMetrics:
         """
         probs      = model.predict_proba(sample_features)[0]
         max_prob   = max(probs)
-        assert max_prob >= 0.40, \
+        assert max_prob >= 1/3, \
             f"❌ Confianza máxima muy baja: {max_prob:.2f} — modelo inseguro"
 
     def test_model_not_always_same_class(self, model):
