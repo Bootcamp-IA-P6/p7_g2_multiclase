@@ -60,12 +60,12 @@ def save_prediction(
     return response.data[0]["id"]
 
 
-def save_feedback(prediction_id: int, feedback: str):
-    """Guarda el feedback del operador."""
-    client = get_client()
-    client.table("predictions").update(
-        {"feedback": feedback}
-    ).eq("id", prediction_id).execute()
+# def save_feedback(prediction_id: int, feedback: str):
+#     """Guarda el feedback del operador."""
+#     client = get_client()
+#     client.table("predictions").update(
+#         {"feedback": feedback}
+#     ).eq("id", prediction_id).execute()
 
 
 def get_history(limit: int = 50) -> list:
@@ -80,6 +80,38 @@ def get_history(limit: int = 50) -> list:
 
 
 def get_stats() -> dict:
+    """Devuelve estadísticas para el dashboard."""
+    client = get_client()
+
+    # 1. Obtén los recuentos por clase de la tabla de predicciones.
+    all_preds = client.table("predictions") \
+                    .select("prediction") \
+                    .execute().data
+
+    total     = len(all_preds)
+    fire      = sum(1 for r in all_preds if r["prediction"] == "fire")
+    smoke     = sum(1 for r in all_preds if r["prediction"] == "smoke")
+    non_fire  = sum(1 for r in all_preds if r["prediction"] == "non fire")
+
+    # 2. Recuperación de estadísticas de retroalimentación de la tabla de retroalimentación (evitando errores de columna)
+    # Dado que la columna predictions.feedback no existe, consultamos directamente la tabla feedback.
+    all_fb = client.table("feedback") \
+                .select("feedback_type") \
+                .execute().data
+
+    with_feedback = len(all_fb)
+    correct       = sum(1 for r in all_fb if r["feedback_type"] == "correct")
+
+    return {
+        "total":          total,
+        "fire":           fire,
+        "smoke":          smoke,
+        "non_fire":       non_fire,
+        "with_feedback":  with_feedback,
+        "correct":        correct,
+        "accuracy_feedback": round(correct / with_feedback * 100, 1)
+                            if with_feedback > 0 else 0
+    }
     """Devuelve estadísticas para el dashboard."""
     client = get_client()
 
@@ -106,6 +138,7 @@ def get_stats() -> dict:
         "accuracy_feedback": round(correct / with_feedback * 100, 1)
                             if with_feedback > 0 else 0
     }
+
     
 def save_feedback(
     prediction_id: int,
