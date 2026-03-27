@@ -135,8 +135,7 @@ create table predictions (
   confidence  float,
   prob_fire   float,
   prob_smoke  float,
-  prob_nonfire float,
-  feedback    text
+  prob_nonfire float
 );
 
 -- Feedback de operadores
