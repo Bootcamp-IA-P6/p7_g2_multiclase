@@ -1,0 +1,23 @@
+name: Tests
+
+on: [pull_request]
+
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        run: pip install uv
+
+      - name: Install deps
+        run: uv sync
+
+      - name: Run tests
+        env:
+            SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+            SUPABASE_KEY: ${{ secrets.SUPABASE_KEY }}
+        run: uv run pytest tests/ -v
